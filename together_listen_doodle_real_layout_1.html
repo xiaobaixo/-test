@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一起听 · 封面涂鸦</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ece6db;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    padding: 24px;
+  }
+  .phone {
+    width: 280px;
+    height: 608px;
+    border-radius: 40px;
+    padding: 16px 16px 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+    background: linear-gradient(180deg, #ecece8 0%, #e8e6e0 55%, #e8c99a 100%);
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; color:#2a2620; flex-shrink:0; }
+  .topbar .icons { display:flex; gap:16px; color:#4a4438; }
+
+  .disc-wrap { position:relative; display:flex; justify-content:center; align-items:center; flex:1; min-height:0; margin:4px 0; }
+  .disc-outer {
+    width:198px; height:198px; border-radius:50%;
+    background: radial-gradient(circle at 40% 35%, #e2ddd0 0%, #b8b0a0 45%, #8c8474 80%, #6e6858 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  }
+  #cover-photo {
+    width:110px; height:110px; border-radius:50%;
+    overflow:hidden; position:relative;
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4);
+    transition: background 0.6s;
+  }
+  canvas { position:absolute; left:0; top:0; width:100%; height:100%; touch-action:none; cursor:crosshair; }
+
+  .status-line {
+    text-align:center; font-size:11px; color:#7a7260; margin-bottom:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+  }
+  .lv-tag {
+    background:#5a5448; color:#fff; font-size:9px; padding:1px 4px; border-radius:4px;
+  }
+
+  .avatars-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:6px; flex-shrink:0; }
+  .avatar-name { font-size:11px; color:#5a5448; }
+  .avatar-overlap { display:flex; }
+  .avatar-circle { width:34px; height:34px; border-radius:50%; border:2px solid #ece6db; }
+  .avatar-circle.second { margin-left:-12px; }
+
+  .together-caption {
+    text-align:center; font-size:11px; color:#8a8272; margin-bottom:14px; flex-shrink:0;
+  } display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; flex-shrink:0; }
+  .song-title { font-size:19px; font-weight:500; color:#2a2620; }
+  .likes { display:flex; gap:10px; color:#8a8272; align-items:center; }
+
+  .song-meta { display:flex; align-items:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0; }
+  .artist { font-size:12px; color:#7a7260; }
+  .tag { font-size:10px; color:#5a5448; background:rgba(0,0,0,0.06); padding:2px 6px; border-radius:8px; }
+
+  .composer-line { font-size:12px; color:#8a8272; margin-bottom:16px; flex-shrink:0; }
+
+  .icon-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; color:#5a5448; flex-shrink:0; }
+  .icon-row .badge-wrap { position:relative; }
+  .icon-row .count-badge {
+    position:absolute; top:-6px; right:-10px; font-size:8px;
+    background:#8a8272; color:#fff; padding:0px 3px; border-radius:6px;
+  }
+
+  .progress-track { height:3px; background:rgba(0,0,0,0.12); border-radius:2px; margin-bottom:4px; position:relative; flex-shrink:0; }
+  .progress-fill { height:100%; background:#2a2620; border-radius:2px; position:relative; transition:width 0.3s; }
+  .progress-dot { position:absolute; right:-5px; top:50%; transform:translateY(-50%); width:11px; height:11px; border-radius:50%; background:#2a2620; }
+  .time-row { display:flex; justify-content:space-between; font-size:11px; color:#8a8272; margin-bottom:14px; flex-shrink:0; }
+
+  .controls { display:flex; justify-content:space-between; align-items:center; padding:0 4px; color:#2a2620; flex-shrink:0; }
+  .controls svg { cursor:pointer; display:block; }
+  .play-circle { border:2px solid #2a2620; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+
+  .brush-hint { text-align:center; font-size:10px; color:#8a8272; margin-bottom:6px; flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <div class="topbar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
+    <div class="icons">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>
+    </div>
+  </div>
+
+  <div class="brush-hint">在封面上画一下，和 Ta 一起留下痕迹</div>
+
+  <div class="disc-wrap">
+    <div class="disc-outer">
+      <div id="cover-photo">
+        <canvas id="canvas" width="220" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="avatars-row">
+    <span class="avatar-name">小林橙汁</span>
+    <div class="avatar-overlap">
+      <div class="avatar-circle" style="background:#5a8ee0;"></div>
+      <div class="avatar-circle second" style="background:#7f77dd;"></div>
+    </div>
+    <span class="avatar-name">小林秋</span>
+  </div>
+  <div class="together-caption">与 小林秋 一起听 · <span id="minutes">221</span> 分钟</div>
+
+  <div class="song-title-row">
+    <div class="song-title" id="song-title">褪色梦</div>
+    <div class="likes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+      <span style="font-size:11px;">1k+</span>
+    </div>
+  </div>
+  <div class="song-meta">
+    <span class="artist" id="song-artist">无尾兔</span>
+    <span class="tag">关注</span>
+    <span class="tag">3人在听</span>
+    <span class="tag">HQ</span>
+  </div>
+  <div class="composer-line">曲：<span id="song-composer">无尾兔</span></div>
+
+  <div class="icon-row">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c3-5 6-5 9 0s6 5 9 0"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4v16M16 4v16M4 9h4M4 15h4M16 9h4M16 15h4"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 1 1 21 11.5z"/></svg>
+    <div class="badge-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0M8 12h8M8 16h5"/></svg>
+      <span class="count-badge">63</span>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:52%;"><div class="progress-dot"></div></div>
+  </div>
+  <div class="time-row"><span id="time-now">01:20</span><span id="time-total">02:33</span></div>
+
+  <div class="controls">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0 1 13.7-4.9L20 8M20 14a8 8 0 0 1-13.7 4.9L4 16"/></svg>
+    <svg id="prev-btn" width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M11 19V5l-9 7 9 7zM21 19V5l-9 7 9 7z"/></svg>
+    <div class="play-circle">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+    </div>
+    <svg id="next-btn" width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M13 5v14l9-7-9-7zM3 5v14l9-7-9-7z"/></svg>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
+  </div>
+
+</div>
+
+<script>
+const songs = [
+  {title:'褪色梦', artist:'无尾兔', composer:'无尾兔', coverBg:'linear-gradient(145deg,#2a2440,#6b5a8a)', brush:'#c9c3f5', time:'01:20', total:'02:33', progress:52},
+  {title:'有点甜', artist:'汪苏泷', composer:'汪苏泷', coverBg:'linear-gradient(145deg,#993c1d,#f0997b)', brush:'#ffdcc9', time:'00:48', total:'03:41', progress:22},
+  {title:'风筝误', artist:'许嵩', composer:'许嵩', coverBg:'linear-gradient(145deg,#085041,#5dcaa5)', brush:'#c8f5e4', time:'02:05', total:'04:02', progress:52},
+  {title:'匿名的高中生', artist:'银临', composer:'银临', coverBg:'linear-gradient(145deg,#72243e,#d4537e)', brush:'#ffd0e1', time:'01:33', total:'03:12', progress:48}
+];
+let songIdx = 0;
+const coverPhoto = document.getElementById('cover-photo');
+let currentBrush = songs[0].brush;
+
+function applySong(){
+  const s = songs[songIdx];
+  coverPhoto.style.background = s.coverBg;
+  currentBrush = s.brush;
+  document.getElementById('song-title').textContent = s.title;
+  document.getElementById('song-artist').textContent = s.artist;
+  document.getElementById('song-composer').textContent = s.composer;
+  document.getElementById('time-now').textContent = s.time;
+  document.getElementById('time-total').textContent = s.total;
+  document.getElementById('progress-fill').style.width = s.progress + '%';
+}
+applySong();
+
+document.getElementById('next-btn').addEventListener('click', ()=>{
+  songIdx = (songIdx+1) % songs.length;
+  applySong();
+});
+document.getElementById('prev-btn').addEventListener('click', ()=>{
+  songIdx = (songIdx-1+songs.length) % songs.length;
+  applySong();
+});
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let strokes = [];
+let currentStroke = null;
+let drawing = false;
+
+function pos(e){
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {x: (e.clientX-rect.left)*scaleX, y: (e.clientY-rect.top)*scaleY};
+}
+
+canvas.addEventListener('pointerdown', e=>{
+  drawing = true;
+  currentStroke = {color: currentBrush, points:[pos(e)], born: Date.now()};
+  strokes.push(currentStroke);
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e=>{
+  if(!drawing) return;
+  currentStroke.points.push(pos(e));
+});
+canvas.addEventListener('pointerup', ()=> drawing = false);
+canvas.addEventListener('pointerleave', ()=> drawing = false);
+
+function drawStroke(s, alpha){
+  if(s.points.length<2) return;
+  ctx.strokeStyle = s.color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(s.points[0].x, s.points[0].y);
+  for(const p of s.points) ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now = Date.now();
+  strokes = strokes.filter(s => now - s.born < 5000);
+  strokes.forEach(s=>{
+    const age = now - s.born;
+    const alpha = Math.max(0, 1 - age/5000);
+    drawStroke(s, alpha);
+  });
+  requestAnimationFrame(loop);
+}
+loop();
+
+const partnerPaths = [
+  [{x:190,y:40},{x:200,y:70},{x:195,y:100}],
+  [{x:40,y:170},{x:80,y:180},{x:120,y:165}]
+];
+let pi = 0;
+setInterval(()=>{
+  const path = partnerPaths[pi % partnerPaths.length];
+  pi++;
+  strokes.push({color:'#5a8ee0', points:path, born: Date.now()});
+}, 3600);
+</script>
+</body>
+</html>
