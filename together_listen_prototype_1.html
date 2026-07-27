@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一起听 · 黑胶架子播放器原型</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ece6db;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    padding: 24px;
+  }
+  .hint {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #8a7f6f;
+  }
+  .phone {
+    width: 280px;
+    height: 608px;
+    border-radius: 36px;
+    background: linear-gradient(160deg, #b5713a, #7a3d24);
+    padding: 16px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #f0e4d8;
+    flex-shrink: 0;
+  }
+  .topbar .icons { display: flex; gap: 14px; }
+  .song-info { flex-shrink: 0; margin-bottom: 12px; }
+  .song-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+  .song-title { font-size: 19px; font-weight: 500; color: #fff; }
+  .song-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .artist { font-size: 12px; color: #f0e4d8; }
+  .tag { font-size: 10px; color: #3a2a1a; background: rgba(255,255,255,0.5); padding: 2px 6px; border-radius: 8px; }
+
+  .shelf-panel {
+    flex: 1;
+    min-height: 0;
+    background: #2a2016;
+    border-radius: 14px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .shelf-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #c9b9a3;
+    margin-bottom: 2px;
+  }
+  .shelf-legend .group { display: flex; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .swatch-square { width: 9px; height: 9px; border-radius: 1px; background: #e8dcc8; display: inline-block; }
+  .swatch-circle { width: 9px; height: 9px; border-radius: 50%; background: #1a1a1a; border: 1px solid #c9b9a3; display: inline-block; }
+
+  #grid { position: relative; flex: 1; }
+  .plank {
+    position: absolute;
+    left: -4px; right: -4px;
+    height: 6px;
+    background: linear-gradient(180deg, #8a6a42, #6b4f2e);
+    border-radius: 2px;
+  }
+  .item {
+    position: absolute;
+    cursor: grab;
+    touch-action: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    transition: box-shadow 0.15s;
+  }
+  .item.dragging { z-index: 10; cursor: grabbing; }
+  .cover {
+    width: 88%; height: 96%;
+    border-radius: 4px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+  }
+  .vinyl {
+    width: 78%; height: 78%;
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+  }
+
+  .together-bar {
+    background: rgba(0,0,0,0.22);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: #f0e4d8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .avatar-pair { display: flex; }
+  .avatar {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid #7a3d24;
+  }
+  .avatar.me { background: #e0a05a; }
+  .avatar.ta { background: #5a8ee0; margin-left: -6px; }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.22);
+    border-radius: 16px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .input-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 12px;
+  }
+  .input-row input::placeholder { color: #d8c9b8; }
+  .send-icon { font-size: 15px; color: #e8dcc8; flex-shrink: 0; cursor: pointer; }
+
+  .bottom { flex-shrink: 0; }
+  .progress-track {
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    margin-bottom: 4px;
+  }
+  .progress-fill { width: 42%; height: 100%; background: #fff; border-radius: 2px; }
+  .time-row { display: flex; justify-content: space-between; font-size: 11px; color: #f0e4d8; margin-bottom: 8px; }
+  .controls { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; color: #fff; }
+  .controls svg { display: block; }
+</style>
+</head>
+<body>
+<div class="hint">拖动架子上的方形封面或圆形黑胶，可任意换位重排</div>
+<div class="phone">
+
+  <div class="topbar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
+    <div class="icons">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>
+    </div>
+  </div>
+
+  <div class="song-info">
+    <div class="song-title-row">
+      <div class="song-title">After All</div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f0e4d8" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+    </div>
+    <div class="song-meta">
+      <span class="artist">psen Carly</span>
+      <span class="tag">158人在听</span>
+      <span class="tag">HQ</span>
+    </div>
+  </div>
+
+  <div class="shelf-panel">
+    <div class="shelf-legend">
+      <div class="group">
+        <span class="legend-item"><i class="swatch-square"></i>小白的私藏</span>
+        <span class="legend-item"><i class="swatch-circle"></i>芝士的私藏</span>
+      </div>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9b9a3" stroke-width="2"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.26-8-12.356-8-5.096 0-5.096 8 0 8 5.096 0 7.26-8 12.356-8z"/></svg>
+    </div>
+    <div id="grid"></div>
+  </div>
+
+  <div class="together-bar">
+    <div class="avatar-pair">
+      <div class="avatar me"></div>
+      <div class="avatar ta"></div>
+    </div>
+    <span>与 芝士 一起听 · 32 分钟</span>
+  </div>
+
+  <div class="input-row">
+    <input placeholder="和 Ta 聊点什么…" />
+    <svg class="send-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+  </div>
+
+  <div class="bottom">
+    <div class="progress-track"><div class="progress-fill"></div></div>
+    <div class="time-row"><span>01:48</span><span>04:12</span></div>
+    <div class="controls">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0 1 13.7-4.9L20 8M20 14a8 8 0 0 1-13.7 4.9L4 16"/></svg>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M11 19V5l-9 7 9 7zM21 19V5l-9 7 9 7z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M13 5v14l9-7-9-7zM3 5v14l9-7-9-7z"/></svg>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let items = [
+  {o:'me', cover:'linear-gradient(145deg,#f0997b,#993c1d)'},
+  {o:'ta', label:'#8a5a3a'},
+  {o:'me', cover:'linear-gradient(145deg,#ed93b1,#72243e)'},
+  {o:'ta', label:'#3a6b52'},
+  {o:'me', cover:'linear-gradient(145deg,#7f77dd,#3c3489)'},
+  {o:'ta', label:'#b5713a'},
+  {o:'me', cover:'linear-gradient(145deg,#5dcaa5,#085041)'},
+  {o:'ta', label:'#993c1d'},
+  {o:'me', cover:'linear-gradient(145deg,#85b7eb,#0c447c)'}
+];
+const grid = document.getElementById('grid');
+const cols = 3, rowGap = 10;
+
+function metrics(){
+  const w = grid.clientWidth, h = grid.clientHeight;
+  const cellW = (w - 8*(cols-1)) / cols;
+  const rowH = (h - rowGap*2) / 3;
+  return {cellW, rowH};
+}
+
+function vinylBg(labelColor){
+  return `radial-gradient(circle, ${labelColor} 0 18%, #1a1a1a 18% 22%, #262626 22% 30%, #1a1a1a 30% 34%, #262626 34% 42%, #1a1a1a 42% 46%, #262626 46% 54%, #1a1a1a 54% 58%, #262626 58% 66%, #1a1a1a 66% 70%, #0f0f0f 70% 100%)`;
+}
+
+function render(){
+  grid.innerHTML = '';
+  const {cellW, rowH} = metrics();
+
+  for(let row=0; row<3; row++){
+    const y = row*(rowH+rowGap) + rowH - 6;
+    const plank = document.createElement('div');
+    plank.className = 'plank';
+    plank.style.top = y + 'px';
+    grid.appendChild(plank);
+  }
+
+  items.forEach((item, i)=>{
+    const row = Math.floor(i/cols), col = i%cols;
+    const x = col*(cellW+8), y = row*(rowH+rowGap);
+    const card = document.createElement('div');
+    card.className = 'item';
+    card.dataset.idx = i;
+    card.style.left = x + 'px';
+    card.style.top = y + 'px';
+    card.style.width = cellW + 'px';
+    card.style.height = (rowH-8) + 'px';
+
+    const inner = document.createElement('div');
+    if(item.o === 'me'){
+      inner.className = 'cover';
+      inner.style.background = item.cover;
+    } else {
+      inner.className = 'vinyl';
+      inner.style.background = vinylBg(item.label);
+    }
+    card.appendChild(inner);
+    grid.appendChild(card);
+    attachDrag(card, cellW, rowH);
+  });
+}
+
+function attachDrag(card, cellW, rowH){
+  let startX, startY, origLeft, origTop, dragging = false;
+
+  card.addEventListener('pointerdown', e=>{
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    origLeft = parseFloat(card.style.left);
+    origTop = parseFloat(card.style.top);
+    card.classList.add('dragging');
+    card.setPointerCapture(e.pointerId);
+  });
+
+  card.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    card.style.left = (origLeft + dx) + 'px';
+    card.style.top = (origTop + dy) + 'px';
+  });
+
+  card.addEventListener('pointerup', e=>{
+    if(!dragging) return;
+    dragging = false;
+    card.classList.remove('dragging');
+
+    const newLeft = parseFloat(card.style.left);
+    const newTop = parseFloat(card.style.top);
+    let col = Math.round(newLeft / (cellW+8));
+    let row = Math.round(newTop / (rowH+rowGap));
+    col = Math.max(0, Math.min(cols-1, col));
+    row = Math.max(0, Math.min(2, row));
+    let newIdx = row*cols + col;
+    newIdx = Math.max(0, Math.min(items.length-1, newIdx));
+
+    const idx = parseInt(card.dataset.idx);
+    const moved = items.splice(idx, 1)[0];
+    items.splice(newIdx, 0, moved);
+    render();
+  });
+}
+
+render();
+window.addEventListener('resize', render);
+
+document.querySelector('.send-icon').addEventListener('click', ()=>{
+  const input = document.querySelector('.input-row input');
+  if(input.value.trim()){
+    input.value = '';
+  }
+});
+</script>
+</body>
+</html>
